@@ -222,7 +222,7 @@ void delay(unsigned long ms)
 }
 
 static void initResetButton();
-static void initAdc();
+static void initAdc( ADC_t* );
 #if defined(ADCACAL0) || defined(ADCBCAL0)
 static uint8_t ReadCalibrationByte(uint8_t index);
 #endif // ADCACAL0 || ADCBCAL0
