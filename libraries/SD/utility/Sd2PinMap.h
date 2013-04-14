@@ -268,7 +268,7 @@ static const pin_map_t digitalPinMap[] = {
   {&DDRF, &PINF, &PORTF, 7}   // F7 45
 };
 //------------------------------------------------------------------------------
-#else  // defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+#elif defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
 // 168 and 328 Arduinos
 
 // Two Wire (aka I2C) ports
@@ -303,7 +303,46 @@ static const pin_map_t digitalPinMap[] = {
   {&DDRC, &PINC, &PORTC, 4},  // C4 18
   {&DDRC, &PINC, &PORTC, 5}   // C5 19
 };
-#endif  // defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+#elif defined(__AVR_ATxmega256A3U__)
+// ATXMega 256A3U
+
+// Two Wire (aka I2C) ports
+//uint8_t const SDA_PIN = 18;
+//uint8_t const SCL_PIN = 19;
+
+// SPI port
+uint8_t const SS_PIN = SS;
+uint8_t const MOSI_PIN = MOSI;
+uint8_t const MISO_PIN = MISO;
+uint8_t const SCK_PIN = SCK;
+
+static const pin_map_t digitalPinMap[] = {
+	{&PORTA.DIR, &PORTA.IN, &PORTA.OUT, 0},  // D0  0
+	{&PORTA.DIR, &PORTA.IN, &PORTA.OUT, 1},  // D1  1
+	{&PORTA.DIR, &PORTA.IN, &PORTA.OUT, 2},  // D2  2
+	{&PORTA.DIR, &PORTA.IN, &PORTA.OUT, 3},  // D3  3
+	{&PORTA.DIR, &PORTA.IN, &PORTA.OUT, 4},  // D4  4
+	{&PORTA.DIR, &PORTA.IN, &PORTA.OUT, 5},  // D5  5
+	{&PORTA.DIR, &PORTA.IN, &PORTA.OUT, 6},  // D6  6
+	{&PORTA.DIR, &PORTA.IN, &PORTA.OUT, 7},  // D7  7
+	{&PORTB.DIR, &PORTB.IN, &PORTB.OUT, 0},  // B0  8
+	{&PORTB.DIR, &PORTB.IN, &PORTB.OUT, 1},  // B1  9
+	{&PORTB.DIR, &PORTB.IN, &PORTB.OUT, 2},  // B2 10
+	{&PORTB.DIR, &PORTB.IN, &PORTB.OUT, 3},  // B3 11
+	{&PORTB.DIR, &PORTB.IN, &PORTB.OUT, 4},  // B4 12
+	{&PORTB.DIR, &PORTB.IN, &PORTB.OUT, 5},  // B5 13
+	{&PORTB.DIR, &PORTB.IN, &PORTB.OUT, 6},  // B5 14
+	{&PORTB.DIR, &PORTB.IN, &PORTB.OUT, 7},  // B5 15
+	{&PORTC.DIR, &PORTC.IN, &PORTC.OUT, 0},  // C0 14
+	{&PORTC.DIR, &PORTC.IN, &PORTC.OUT, 1},  // C1 15
+	{&PORTC.DIR, &PORTC.IN, &PORTC.OUT, 2},  // C2 16
+	{&PORTC.DIR, &PORTC.IN, &PORTC.OUT, 3},  // C3 17
+	{&PORTC.DIR, &PORTC.IN, &PORTC.OUT, 4},  // C4 18
+	{&PORTC.DIR, &PORTC.IN, &PORTC.OUT, 5},  // C5 19
+	{&PORTC.DIR, &PORTC.IN, &PORTC.OUT, 6},  // C5 19
+	{&PORTC.DIR, &PORTC.IN, &PORTC.OUT, 7}   // C5 19
+};
+#endif
 //------------------------------------------------------------------------------
 static const uint8_t digitalPinCount = sizeof(digitalPinMap)/sizeof(pin_map_t);
 
