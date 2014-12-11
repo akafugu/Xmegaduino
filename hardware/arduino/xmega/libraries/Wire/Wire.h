@@ -25,6 +25,8 @@
 #include <inttypes.h>
 #include "Stream.h"
 
+typedef uint8_t AutoTimeoutMs;
+
 #if !defined(__AVR_XMEGA__)
 
 #define BUFFER_LENGTH 32
@@ -46,6 +48,8 @@ class TwoWire : public Stream
     static void (*user_onReceive)(int);
     static void onRequestService(void);
     static void onReceiveService(uint8_t*, int);
+
+    AutoTimeoutMs auto_timeout;
   public:
     TwoWire();
     void begin();
@@ -72,6 +76,11 @@ class TwoWire : public Stream
     inline size_t write(long n) { return write((uint8_t)n); }
     inline size_t write(unsigned int n) { return write((uint8_t)n); }
     inline size_t write(int n) { return write((uint8_t)n); }
+
+
+    inline AutoTimeoutMs autoTimeout() { return auto_timeout;}
+    inline void setAutoTimeout(AutoTimeoutMs ms) { auto_timeout = ms;}
+
     using Print::write;
 };
 
@@ -154,6 +163,13 @@ extern TwoWire Wire;
  * is in progress.
  */
 #define TWI_NOT_TRANSMITTING 11
+
+
+/**
+ * Timeout, if using autoTimeout()
+ */
+#define TWI_ERROR_TIMOUT 12
+
 /** 
  * Error code reported by a xmWire class method :
  * This has to be implemented in  a future release.
@@ -243,6 +259,7 @@ class xmWire : public Stream {
     /** True if the bus is currently busy */
     //    volatile boolean busy;
      
+    AutoTimeoutMs auto_timeout;
   public:
     /** 
      * Create a new instance of a TWI port
@@ -361,6 +378,10 @@ class xmWire : public Stream {
      * Our internal interrupt handler
      */
     void onMasterInterrupt();
+
+    inline AutoTimeoutMs autoTimeout() { return auto_timeout;}
+    inline void setAutoTimeout(AutoTimeoutMs ms) { auto_timeout = ms;}
+
 
     using Print::write;
 };

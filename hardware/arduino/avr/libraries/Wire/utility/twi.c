@@ -112,19 +112,29 @@ void twi_setAddress(uint8_t address)
  *          sendStop: Boolean indicating whether to send a stop at the end
  * Output   number of bytes read
  */
-uint8_t twi_readFrom(uint8_t address, uint8_t* data, uint8_t length, uint8_t sendStop)
+uint8_t twi_readFrom(uint8_t address, uint8_t* data, uint8_t length, uint8_t sendStop, uint8_t timeoutMs)
 {
   uint8_t i;
+  uint32_t timeoutTime = 0;
 
   // ensure data will fit into buffer
   if(TWI_BUFFER_LENGTH < length){
     return 0;
   }
 
+  if (timeoutMs)
+  {
+     timeoutTime = millis() + timeoutMs;
+  }
   // wait until twi is ready, become master receiver
   while(TWI_READY != twi_state){
+ 
+    if (timeoutTime && millis() > timeoutTime)
+	return 0;
+
     continue;
   }
+
   twi_state = TWI_MRX;
   twi_sendStop = sendStop;
   // reset error state (0xFF.. no error occured)

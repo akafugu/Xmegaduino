@@ -25,6 +25,8 @@
 #include <inttypes.h>
 #include "Stream.h"
 
+typedef uint8_t AutoTimeoutMs;
+
 #define BUFFER_LENGTH 32
 
 class TwoWire : public Stream
@@ -44,6 +46,8 @@ class TwoWire : public Stream
     static void (*user_onReceive)(int);
     static void onRequestService(void);
     static void onReceiveService(uint8_t*, int);
+
+    AutoTimeoutMs auto_timeout;
   public:
     TwoWire();
     void begin();
@@ -70,6 +74,13 @@ class TwoWire : public Stream
     inline size_t write(long n) { return write((uint8_t)n); }
     inline size_t write(unsigned int n) { return write((uint8_t)n); }
     inline size_t write(int n) { return write((uint8_t)n); }
+
+
+    inline AutoTimeoutMs autoTimeout() { return auto_timeout;}
+    inline void setAutoTimeout(AutoTimeoutMs ms) { auto_timeout = ms;}
+
+
+
     using Print::write;
 };
 

@@ -117,7 +117,21 @@ int xmWire::begin(uint8_t address, uint8_t speed, int bufferSize) {
 }
 
 int xmWire::beginTransmission(uint8_t slaveAddress) {
-    while(!ready()); // Wait for Wire to become available
+
+    uint32_t timeoutTimeMs = 0;
+
+    if (auto_timeout)
+        timeoutTimeMs = millis() + auto_timeout;
+
+    while(!ready())  // Wait for Wire to become available
+    {
+        if (timeoutTimeMs && millis() > timeoutTimeMs)
+            return TWI_ERROR_TIMOUT;
+
+        continue;
+    }
+        
+
     if(slaveAddress==0 || slaveAddress>127)
 	return TWI_ERROR_ADDRESS;
     this->slaveAddress=slaveAddress;
@@ -180,7 +194,16 @@ int xmWire::endTransmission(int expectedByteCount) {
 }
 
 int xmWire::requestFrom(uint8_t slaveAddress, int expectedByteCount) {
-	while(!ready()); // Wait until not busy
+
+    uint32_t timeoutTimeMs = 0;
+
+    if (auto_timeout)
+        timeoutTimeMs = millis() + auto_timeout;
+
+    while(!ready()) {
+        if (timeoutTimeMs && millis() > timeoutTimeMs)
+            return TWI_ERROR_TIMOUT;
+    }
     if(slaveAddress==0 || slaveAddress>127)
 	return TWI_ERROR_ADDRESS;
     if(expectedByteCount<=0 || expectedByteCount>receiveBuffer.size()) {
@@ -207,7 +230,23 @@ boolean xmWire::ready() {
 }
 
 int xmWire::available(void) {
-    while(this->slaveReadSize > 0) delay(2); // Wait until we finish recieving
+
+
+    uint32_t timeoutTimeMs = 0;
+
+    if (auto_timeout)
+        timeoutTimeMs = millis() + auto_timeout;
+
+
+    while(this->slaveReadSize > 0) 
+    {
+        if (timeoutTimeMs && millis() > timeoutTimeMs)
+        {
+            this->slaveReadSize = 0;
+            return 0;
+        }
+        delay(2); // Wait until we finish recieving
+    }
     return receiveBuffer.remaining();
 }
 
