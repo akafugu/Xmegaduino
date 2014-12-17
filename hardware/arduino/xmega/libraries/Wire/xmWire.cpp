@@ -126,7 +126,7 @@ int xmWire::beginTransmission(uint8_t slaveAddress) {
     while(!ready())  // Wait for Wire to become available
     {
         if (timeoutTimeMs && millis() > timeoutTimeMs)
-            return TWI_ERROR_TIMOUT;
+            return TWI_ERROR_TIMEOUT;
 
         continue;
     }
@@ -202,7 +202,7 @@ int xmWire::requestFrom(uint8_t slaveAddress, int expectedByteCount) {
 
     while(!ready()) {
         if (timeoutTimeMs && millis() > timeoutTimeMs)
-            return TWI_ERROR_TIMOUT;
+            return TWI_ERROR_TIMEOUT;
     }
     if(slaveAddress==0 || slaveAddress>127)
 	return TWI_ERROR_ADDRESS;

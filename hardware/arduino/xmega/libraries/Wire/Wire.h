@@ -168,7 +168,7 @@ extern TwoWire Wire;
 /**
  * Timeout, if using autoTimeout()
  */
-#define TWI_ERROR_TIMOUT 12
+#define TWI_ERROR_TIMEOUT 12
 
 /** 
  * Error code reported by a xmWire class method :
