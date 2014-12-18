@@ -60,7 +60,11 @@ namespace RealTimeClock {
 
 uint32_t Device::offset = 0;
 
+bool Device::wasResetAtPowerup()
+{
+	 return wiring_rtc32_needed_reset();
 
+}
 DateTime Device::rebaseCounter()
 {
 	DateTime nowTime = now();

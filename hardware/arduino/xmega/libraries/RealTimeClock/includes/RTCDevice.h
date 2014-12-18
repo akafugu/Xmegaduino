@@ -61,11 +61,9 @@ typedef void(*PeriodicCallback)(void);
 class Device {
 
 public:
+	static bool wasResetAtPowerup();
     static void begin(const DateTime& dt) { adjust(dt); }
-
     static DateTime rebaseCounter();
-
-
     static void adjust(const DateTime& dt, bool resetRTCCounter=false);
     inline static DateTime now() { return (uint32_t)(offset + (millis() / 1000)); }
     static void setPeriodicCallback(PeriodicCallback cb, uint16_t every_seconds=1);

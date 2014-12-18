@@ -62,6 +62,13 @@ namespace RealTimeClock {
 uint32_t Device::offset = 0;
 
 
+bool Device::wasResetAtPowerup()
+{
+	 return true; // always true, no battery backup...
+
+}
+
+
 DateTime Device::rebaseCounter()
 {
 
