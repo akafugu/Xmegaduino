@@ -51,11 +51,14 @@
 #define ONBOARD_RTC_LIB_H_
 
 
-
+#include "includes/RTCIncludes.h"
 #include "includes/RTCDateTime.h"
 #include "includes/RTCTimespan.h"
 #include "includes/RTCDevice.h"
 
+#ifndef USE_RTC
+#error "You don't seem to be on a platform/variant that defines USE_RTC -- RealTimeClock library not useable"
+#endif
 
 
 
