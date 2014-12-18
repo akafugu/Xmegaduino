@@ -25,6 +25,7 @@
 #include <stddef.h>
 #include <avr/pgmspace.h>
 #include "wiring_private.h"
+#include "wiring_rtc.h"
 
 // Some versions of avr-gcc on linux defines XXX_bp instead of _gp.
 #if !defined ADC_SWEEP_gp
@@ -46,46 +47,20 @@
 volatile unsigned long millis_count = 0;
 volatile unsigned long seconds_count = 0;
 #if defined(USE_RTC)
+// wiring_setup_rtc_* used to implement
+// platform-specific (i.e. RTC vs RTC32) details.
+
+#ifndef RTC32
+/* this platform does *not* have the 32-bit RTC, use regular method.
+ * For the RTC32 version (e.g. xmega256A3BU), see wiring_rtc32.c 
+ * (same API, of course).
+*/
+
 volatile unsigned long rtc_millis = 0;
 
-/*! \brief RTC overflow interrupt service routine.
- *
- *  This ISR keeps track of the milliseconds 
- */
-ISR(RTC_OVF_vect)
-{
-	rtc_millis = rtc_millis+4;
-}
 
-unsigned long millis()
-{
- 	unsigned long m;
- 	
- 	uint8_t oldSREG = SREG;
- 
-	// disable interrupts while we read rtc_millis or we might get an
-	// inconsistent value (e.g. in the middle of a write to rtc_millis)
-	cli();
-	m = rtc_millis;
-	SREG = oldSREG;
+#endif /* ifndef RTC32 */
 
-	return m;
-}
-
-unsigned long micros(void) {
-	// TODO: Get real micros and not just millis*1000
-	unsigned long m;
-
-        uint8_t oldSREG = SREG;
-
-        // disable interrupts while we read rtc_millis or we might get an
-        // inconsistent value (e.g. in the middle of a write to rtc_millis)
-        cli();
-        m = rtc_millis;
-        SREG = oldSREG;
-
-        return m*1000;
-}
 
 /* Delay for the given number of microseconds.  Assumes a 8, 16 or 32 MHz clock. */
 void delayMicroseconds(unsigned int us)
@@ -146,6 +121,8 @@ void delayMicroseconds(unsigned int us)
                 "brne 1b" : "=w" (us) : "0" (us) // 2 cycles
         );
 }
+
+
 
 
 #else
@@ -212,6 +189,7 @@ void delayMicroseconds(unsigned int us)
 
         while (micros() - start <= us);
 }
+
 #endif // USE_RTC
 
 void delay(unsigned long ms)
@@ -264,16 +242,7 @@ void init()
         // TODO: gc: ClkPer4 should really be 4x ClkSys for Hi-Res extensions (16.2)
 
 #ifdef USE_RTC
-	/* Turn on internal 32kHz. */
-	OSC.CTRL |= OSC_RC32KEN_bm;
-
-	do {
-		/* Wait for the 32kHz oscillator to stabilize. */
-	} while ( ( OSC.STATUS & OSC_RC32KRDY_bm ) == 0);
-		
-
-	/* Set internal 32kHz oscillator as clock source for RTC. */
-	CLK.RTCCTRL = CLK_RTCSRC_RCOSC_gc | CLK_RTCEN_bm;//1kHz
+	wiring_setup_rtc_clocksource();
 #else
         /*************************************/
         /* Init real time clock for millis() */
@@ -354,20 +323,7 @@ void init()
 #endif
 
 #if defined(USE_RTC)
-	do {
-		/* Wait until RTC is not busy. */
-	} while (  RTC.STATUS & RTC_SYNCBUSY_bm );
-	
-	/* Configure RTC period to 1 millisecond. */
-	RTC.PER = 0;//1ms
-	RTC.CNT = 0;
-	RTC.COMP = 0;
-	RTC.CTRL = ( RTC.CTRL & ~RTC_PRESCALER_gm ) | RTC_PRESCALER_DIV1_gc;
-
-	/* Enable overflow interrupt. */	
-	RTC.INTCTRL = ( RTC.INTCTRL & ~( RTC_COMPINTLVL_gm | RTC_OVFINTLVL_gm ) ) |
-	              RTC_OVFINTLVL_LO_gc |
-	              RTC_COMPINTLVL_OFF_gc;
+	wiring_setup_rtc();
 #endif
 
         /*************************************/
