@@ -1,0 +1,32 @@
+#######################################
+# Syntax Coloring Map For TinyBrite
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+RealTimeClock	KEYWORD1
+DateTime		KEYWORD1
+TimeSpan	KEYWORD1
+
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+begin	KEYWORD2
+rebaseCounter	KEYWORD2
+adjust	KEYWORD2
+now	KEYWORD2
+setPeriodicCallback	KEYWORD2
+clearPeriodicCallback	KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+

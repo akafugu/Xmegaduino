@@ -84,7 +84,7 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity, uint8_t sendStop
     quantity = BUFFER_LENGTH;
   }
   // perform blocking read into buffer
-  uint8_t read = twi_readFrom(address, rxBuffer, quantity, sendStop);
+  uint8_t read = twi_readFrom(address, rxBuffer, quantity, sendStop, auto_timeout);
   // set rx buffer iterator vars
   rxBufferIndex = 0;
   rxBufferLength = read;
