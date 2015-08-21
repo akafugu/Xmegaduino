@@ -70,9 +70,9 @@ static const uint8_t JOY_LEFT = 35;
 static const uint8_t JOY_UP = 36;   
 #define JOY_INIT() {for(int i = 32;i<37;i++) pinMode(i, INPUT);} 
 
-static const uint8_t KEY1 = 37;  
-static const uint8_t KEY2 = 38; 
-static const uint8_t KEY3 = 39;  
+static const uint8_t KEY2 = 37;  
+static const uint8_t KEY1 = 38; 
+static const uint8_t KEY0 = 39;  
 #define KEY_INIT() {for(int i = 37;i<40;i++) pinMode(i, INPUT);} 
 
 static const uint8_t A0 = 0;
