@@ -61,16 +61,19 @@ static const uint8_t LED0 = 40;
 static const uint8_t LED1 = 41;      
 static const uint8_t LED2 = 42;      
 static const uint8_t LED3 = 43;  
+#define LED_INIT() {for(int i = 40;i<44;i++) pinMode(i, OUTPUT);} 
 
-static const uint8_t JOY1 = 32;  
-static const uint8_t JOY2 = 33; 
-static const uint8_t JOY3 = 34;   
-static const uint8_t JOY4 = 35;   
-static const uint8_t JOY5 = 36;   
+static const uint8_t JOY_RIGHT = 32;  
+static const uint8_t JOY_DOWN = 33; 
+static const uint8_t JOY_PRESS = 34;   
+static const uint8_t JOY_LEFT = 35;   
+static const uint8_t JOY_UP = 36;   
+#define JOY_INIT() {for(int i = 32;i<37;i++) pinMode(i, INPUT);} 
 
 static const uint8_t KEY1 = 37;  
 static const uint8_t KEY2 = 38; 
 static const uint8_t KEY3 = 39;  
+#define KEY_INIT() {for(int i = 37;i<40;i++) pinMode(i, INPUT);} 
 
 static const uint8_t A0 = 0;
 static const uint8_t A1 = 1;
