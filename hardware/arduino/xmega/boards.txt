@@ -144,3 +144,27 @@ akafuino.bootloader.file=akafuino/akafuino-boot.hex
 akafuino.bootloader.fuse2=0xBF
 #akafuino.bootloader.fuse4=0xFE
 akafuino.bootloader.fuse5=0xFD
+
+##############################################################
+
+eka.name=XMEGA128A1 EK-A
+
+eka.build.mcu=atxmega128a1
+eka.build.f_cpu=32000000L
+eka.build.core=xmega
+eka.build.variant=eka
+
+eka.upload.tool=pyc45b
+eka.upload.maximum_size=131072
+eka.upload.wait_for_upload_port=true
+eka.upload.protocol=chip45boot2
+
+eka.bootloader.tool=avrdude
+eka.bootloader.maximum_size=131072
+eka.bootloader.protocol=PDI
+eka.bootloader.file=eka/chip45boot2_atxmega128a1_uartC0_v2.9Q.hex
+
+## XPlain w/ Serial
+## -------------------------
+eka.menu.programmer.serial=Serial
+eka.menu.programmer.serial.upload.speed=115200
