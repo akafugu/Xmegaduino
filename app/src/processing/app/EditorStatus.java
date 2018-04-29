@@ -25,7 +25,14 @@ package processing.app;
 
 import java.awt.*;
 import java.awt.event.*;
+
 import javax.swing.*;
+
+import processing.app.helpers.OSUtils;
+
+import java.awt.datatransfer.*;
+
+import static processing.app.I18n._;
 
 
 /**
@@ -40,6 +47,7 @@ public class EditorStatus extends JPanel /*implements ActionListener*/ {
   //static final int PROMPT = 2;
   //static final int EDIT   = 3;
   static final int EDIT   = 2;
+  static final int PROGRESS = 5;
 
   static final int YES    = 1;
   static final int NO     = 2;
@@ -66,26 +74,35 @@ public class EditorStatus extends JPanel /*implements ActionListener*/ {
   JButton cancelButton;
   JButton okButton;
   JTextField editField;
+  JProgressBar progressBar;
+  JButton copyErrorButton;
 
   //Thread promptThread;
   int response;
 
+  boolean initialized = false;
 
   public EditorStatus(Editor editor) {
     this.editor = editor;
     empty();
 
     if (bgcolor == null) {
-      bgcolor = new Color[3]; //4];
+      bgcolor = new Color[6];
       bgcolor[0] = Theme.getColor("status.notice.bgcolor");
       bgcolor[1] = Theme.getColor("status.error.bgcolor");
       bgcolor[2] = Theme.getColor("status.edit.bgcolor");
+      bgcolor[3] = null;
+      bgcolor[4] = null;
+      bgcolor[5] = Theme.getColor("status.notice.bgcolor");
 
-      fgcolor = new Color[3]; //4];
+      fgcolor = new Color[6];
       fgcolor[0] = Theme.getColor("status.notice.fgcolor");
       fgcolor[1] = Theme.getColor("status.error.fgcolor");
       fgcolor[2] = Theme.getColor("status.edit.fgcolor");
-    }
+      fgcolor[3] = null;
+      fgcolor[4] = null;
+      fgcolor[5] = Theme.getColor("status.notice.fgcolor");
+}
   }
 
 
@@ -100,6 +117,8 @@ public class EditorStatus extends JPanel /*implements ActionListener*/ {
   public void notice(String message) {
     mode = NOTICE;
     this.message = message;
+    if (copyErrorButton != null)
+      copyErrorButton.setVisible(false);
     //update();
     repaint();
   }
@@ -112,6 +131,8 @@ public class EditorStatus extends JPanel /*implements ActionListener*/ {
   public void error(String message) {
     mode = ERR;
     this.message = message;
+    if (copyErrorButton != null)
+      copyErrorButton.setVisible(true);
     repaint();
   }
 
@@ -163,6 +184,58 @@ public class EditorStatus extends JPanel /*implements ActionListener*/ {
     empty();
   }
 
+  public void progress(String message)
+  {
+    mode = PROGRESS;
+    this.message = message;
+    progressBar.setIndeterminate(false);
+    progressBar.setVisible(true);
+    copyErrorButton.setVisible(false);
+    setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+    repaint();
+  }
+
+  
+  public void progressIndeterminate(String message)
+  {
+    mode = PROGRESS;
+    this.message = message;
+    progressBar.setIndeterminate(true);
+    progressBar.setValue(50);
+    progressBar.setVisible(true);
+    copyErrorButton.setVisible(false);
+    setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+    repaint();
+  }
+
+  
+  public void progressNotice(String message) {
+    //mode = NOTICE;
+    this.message = message;
+    //update();
+    repaint();
+  }
+  
+  
+  public void unprogress()
+  {
+    if (PreferencesData.getBoolean("editor.beep.compile")) {
+      Toolkit.getDefaultToolkit().beep();
+    }
+    if (progressBar == null) return;
+    progressBar.setVisible(false);
+    progressBar.setValue(0);
+    setCursor(null);
+    //empty();
+  }
+  
+  
+  public void progressUpdate(int value)
+  {
+    if (progressBar == null) return;
+    progressBar.setValue(value);
+    repaint();
+  }
 
   /*
   public void update() {
@@ -181,7 +254,10 @@ public class EditorStatus extends JPanel /*implements ActionListener*/ {
 
   public void paintComponent(Graphics screen) {
     //if (screen == null) return;
-    if (okButton == null) setup();
+    if (!initialized) {
+      setup();
+      initialized = true;
+    }
 
     //System.out.println("status.paintComponent");
 
@@ -234,8 +310,8 @@ public class EditorStatus extends JPanel /*implements ActionListener*/ {
 
   protected void setup() {
     if (okButton == null) {
-      cancelButton = new JButton(Preferences.PROMPT_CANCEL);
-      okButton = new JButton(Preferences.PROMPT_OK);
+      cancelButton = new JButton(I18n.PROMPT_CANCEL);
+      okButton = new JButton(I18n.PROMPT_OK);
 
       cancelButton.addActionListener(new ActionListener() {
         public void actionPerformed(ActionEvent e) {
@@ -259,7 +335,7 @@ public class EditorStatus extends JPanel /*implements ActionListener*/ {
 
       // !@#(* aqua ui #($*(( that turtle-neck wearing #(** (#$@)(
       // os9 seems to work if bg of component is set, but x still a bastard
-      if (Base.isMacOS()) {
+      if (OSUtils.isMacOS()) {
         //yesButton.setBackground(bgcolor[EDIT]);
         //noButton.setBackground(bgcolor[EDIT]);
         cancelButton.setBackground(bgcolor[EDIT]);
@@ -369,6 +445,41 @@ public class EditorStatus extends JPanel /*implements ActionListener*/ {
         });
       add(editField);
       editField.setVisible(false);
+
+      progressBar = new JProgressBar(JScrollBar.HORIZONTAL);
+      progressBar.setIndeterminate(false);
+      if (OSUtils.isMacOS()) {
+        //progressBar.setBackground(bgcolor[PROGRESS]);
+        //progressBar.putClientProperty("JProgressBar.style", "circular");
+      }
+      progressBar.setValue(0);
+      progressBar.setBorderPainted(true);
+      //progressBar.setStringPainted(true);
+      add(progressBar);
+      progressBar.setVisible(false);
+      
+      copyErrorButton = new JButton(_("Copy error messages"));
+      add(copyErrorButton);
+      copyErrorButton.setVisible(false);
+      copyErrorButton.addActionListener(new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+          String message = "";
+          message += _("Arduino: ") + BaseNoGui.VERSION_NAME_LONG + " (" + System.getProperty("os.name") + "), ";
+          message += _("Board: ") + "\"" + BaseNoGui.getBoardPreferences().get("name") + "\"\n\n";
+          message += editor.console.consoleTextPane.getText().trim();
+          if ((PreferencesData.getBoolean("build.verbose")) == false) {
+            message += "\n\n";
+            message += "  " + _("This report would have more information with") + "\n";
+            message += "  \"" + _("Show verbose output during compilation") + "\"\n";
+            message += "  " + _("enabled in File > Preferences.") + "\n";
+          }
+          Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+          StringSelection data = new StringSelection(message);
+          clipboard.setContents(data, null);
+          Clipboard unixclipboard = Toolkit.getDefaultToolkit().getSystemSelection();
+          if (unixclipboard != null) unixclipboard.setContents(data, null);
+        }
+      });
     }
   }
 
@@ -385,11 +496,13 @@ public class EditorStatus extends JPanel /*implements ActionListener*/ {
     //noButton.setLocation(noLeft, top);
     cancelButton.setLocation(cancelLeft, top);
     okButton.setLocation(noLeft, top);
+    progressBar.setLocation(noLeft, top);
 
     //yesButton.setSize(Preferences.BUTTON_WIDTH, Preferences.BUTTON_HEIGHT);
     //noButton.setSize(Preferences.BUTTON_WIDTH, Preferences.BUTTON_HEIGHT);
     cancelButton.setSize(Preferences.BUTTON_WIDTH, Preferences.BUTTON_HEIGHT);
     okButton.setSize(Preferences.BUTTON_WIDTH, Preferences.BUTTON_HEIGHT);
+    progressBar.setSize(2*Preferences.BUTTON_WIDTH, Preferences.BUTTON_HEIGHT); 
 
     // edit field height is awkward, and very different between mac and pc,
     // so use at least the preferred height for now.
@@ -398,6 +511,11 @@ public class EditorStatus extends JPanel /*implements ActionListener*/ {
     int editTop = (1 + sizeH - editHeight) / 2;  // add 1 for ceil
     editField.setBounds(yesLeft - Preferences.BUTTON_WIDTH, editTop,
                         editWidth, editHeight);
+    progressBar.setBounds(noLeft, editTop, editWidth, editHeight);
+
+    Dimension copyErrorButtonSize = copyErrorButton.getPreferredSize();
+    copyErrorButton.setLocation(sizeW - copyErrorButtonSize.width - 5, top);
+    copyErrorButton.setSize(copyErrorButtonSize.width, Preferences.BUTTON_HEIGHT);
   }
 
 
@@ -427,5 +545,9 @@ public class EditorStatus extends JPanel /*implements ActionListener*/ {
         unedit();
       }
     }
+  }
+  
+  public boolean isInitialized() {
+    return initialized;
   }
 }

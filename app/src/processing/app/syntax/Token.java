@@ -17,7 +17,6 @@ package processing.app.syntax;
  * token in the text, and a pointer to the next token in the list.
  *
  * @author Slava Pestov
- * @version $Id: Token.java 1268 2005-04-09 02:30:37Z benfry $
  */
 public class Token
 {
@@ -84,16 +83,21 @@ public class Token
         public static final byte OPERATOR = 9;
 
         /**
+         * URL token id.
+         */
+        public static final byte URL = 10;
+        
+        /**
          * Invalid token id. This can be used to mark invalid
          * or incomplete tokens, so the user can easily spot
          * syntax errors.
          */
-        public static final byte INVALID = 10;
+        public static final byte INVALID = 11;
 
         /**
          * The total number of defined token ids.
          */
-        public static final byte ID_COUNT = 11;
+        public static final byte ID_COUNT = 12;
 
         /**
          * The first id that can be used for internal state

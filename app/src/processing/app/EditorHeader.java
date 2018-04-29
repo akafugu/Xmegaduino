@@ -22,6 +22,9 @@
 */
 
 package processing.app;
+import processing.app.helpers.OSUtils;
+import processing.app.tools.MenuScroller;
+import static processing.app.I18n._;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -32,6 +35,7 @@ import javax.swing.*;
 /**
  * Sketch tabs at the top of the editor window.
  */
+@SuppressWarnings("serial")
 public class EditorHeader extends JComponent {
   static Color backgroundColor;
   static Color textColor[] = new Color[2];
@@ -174,7 +178,7 @@ public class EditorHeader extends JComponent {
     for (int i = 0; i < sketch.getCodeCount(); i++) {
       SketchCode code = sketch.getCode(i);
 
-      String codeName = sketch.hideExtension(code.getExtension()) ? 
+      String codeName = code.isExtension(sketch.getHiddenExtensions()) ?
         code.getPrettyName() : code.getFileName();
 
       // if modified, add the li'l glyph next to the name
@@ -237,6 +241,7 @@ public class EditorHeader extends JComponent {
 
     } else {
       menu = new JMenu();
+      MenuScroller.setScrollerFor(menu);
       popup = menu.getPopupMenu();
       add(popup);
       popup.setLightWeightPopupEnabled(true);
@@ -288,7 +293,7 @@ public class EditorHeader extends JComponent {
     */
 
     //item = new JMenuItem("New Tab");
-    item = Editor.newJMenuItemShift("New Tab", 'N');
+    item = Editor.newJMenuItemShift(_("New Tab"), 'N');
     item.addActionListener(new ActionListener() {
         public void actionPerformed(ActionEvent e) {
           editor.getSketch().handleNewCode();
@@ -296,7 +301,7 @@ public class EditorHeader extends JComponent {
       });
     menu.add(item);
 
-    item = new JMenuItem("Rename");
+    item = new JMenuItem(_("Rename"));
     item.addActionListener(new ActionListener() {
         public void actionPerformed(ActionEvent e) {
           editor.getSketch().handleRenameCode();
@@ -310,7 +315,7 @@ public class EditorHeader extends JComponent {
       });
     menu.add(item);
 
-    item = new JMenuItem("Delete");
+    item = new JMenuItem(_("Delete"));
     item.addActionListener(new ActionListener() {
         public void actionPerformed(ActionEvent e) {
           editor.getSketch().handleDeleteCode();
@@ -322,31 +327,28 @@ public class EditorHeader extends JComponent {
 
     //  KeyEvent.VK_LEFT and VK_RIGHT will make Windows beep
 
-    item = new JMenuItem("Previous Tab");
-    KeyStroke ctrlAltLeft =
-      KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, Editor.SHORTCUT_ALT_KEY_MASK);
+    item = new JMenuItem(_("Previous Tab"));
+    KeyStroke ctrlAltLeft = KeyStroke
+        .getKeyStroke(KeyEvent.VK_LEFT, Editor.SHORTCUT_ALT_KEY_MASK);
     item.setAccelerator(ctrlAltLeft);
-    // this didn't want to work consistently
-    /*
     item.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          editor.sketch.prevCode();
-        }
-      });
-    */
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        editor.sketch.handlePrevCode();
+      }
+    });
     menu.add(item);
 
-    item = new JMenuItem("Next Tab");
-    KeyStroke ctrlAltRight =
-      KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, Editor.SHORTCUT_ALT_KEY_MASK);
+    item = new JMenuItem(_("Next Tab"));
+    KeyStroke ctrlAltRight = KeyStroke
+        .getKeyStroke(KeyEvent.VK_RIGHT, Editor.SHORTCUT_ALT_KEY_MASK);
     item.setAccelerator(ctrlAltRight);
-    /*
     item.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          editor.sketch.nextCode();
-        }
-      });
-    */
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        editor.sketch.handleNextCode();
+      }
+    });
     menu.add(item);
 
     Sketch sketch = editor.getSketch();
@@ -358,7 +360,7 @@ public class EditorHeader extends JComponent {
             editor.getSketch().setCurrentCode(e.getActionCommand());
           }
         };
-      for (SketchCode code : sketch.getCode()) {
+      for (SketchCode code : sketch.getCodes()) {
         item = new JMenuItem(code.isExtension(sketch.getDefaultExtension()) ? 
                              code.getPrettyName() : code.getFileName());
         item.setActionCommand(code.getFileName());
@@ -380,7 +382,7 @@ public class EditorHeader extends JComponent {
 
 
   public Dimension getMinimumSize() {
-    if (Base.isMacOS()) {
+    if (OSUtils.isMacOS()) {
       return new Dimension(300, Preferences.GRID_SIZE);
     }
     return new Dimension(300, Preferences.GRID_SIZE - 1);
@@ -388,7 +390,7 @@ public class EditorHeader extends JComponent {
 
 
   public Dimension getMaximumSize() {
-    if (Base.isMacOS()) {
+    if (OSUtils.isMacOS()) {
       return new Dimension(3000, Preferences.GRID_SIZE);
     }
     return new Dimension(3000, Preferences.GRID_SIZE - 1);

@@ -25,11 +25,14 @@ package processing.app.tools;
 
 import java.awt.*;
 import java.awt.datatransfer.*;
+
+import javax.swing.text.BadLocationException;
 import javax.swing.text.Segment;
+
+import org.fife.ui.rsyntaxtextarea.Token;
 
 import processing.app.*;
 import processing.app.syntax.*;
-import processing.core.PApplet;
 
 /**
  * Format for Discourse Tool
@@ -44,6 +47,8 @@ import processing.core.PApplet;
  * <p/>
  * Updated for 0144 to only format the selected lines.
  * <p/>
+ * Updated for 1.5.8 - Simplification, using RSyntaxTextArea TokenImpl formatter (08 dec 2014 - Ricardo JL Rufino)
+ * <p/>
  * Notes from the original source:
  * Discourse.java This is a dirty-mix source.
  * NOTE that: No macs and no keyboard. Unreliable source.
@@ -52,10 +57,10 @@ import processing.core.PApplet;
  */
 public class DiscourseFormat {
 
-  Editor editor;
+  private Editor editor;
   // JTextArea of the actual Editor
-  JEditTextArea textarea;
-  boolean html;
+  private SketchTextArea textarea;
+  private boolean html;
 
 
   /**
@@ -75,13 +80,19 @@ public class DiscourseFormat {
    */
   public void show() {
     // [code] tag cancels other tags, using [quote]
-    StringBuffer cf = new StringBuffer(html ? "<pre>\n" : "[quote]\n");
+    StringBuilder cf = new StringBuilder(html ? "<pre>\n" : "[code]\n");
 
     int selStart = textarea.getSelectionStart();
-    int selStop = textarea.getSelectionStop();
+    int selStop = textarea.getSelectionEnd();
 
-    int startLine = textarea.getSelectionStartLine();
-    int stopLine = textarea.getSelectionStopLine();
+    int startLine;
+    int stopLine;
+    try {
+      startLine = textarea.getLineOfOffset(selStart);
+      stopLine = textarea.getLineOfOffset(selStop);
+    } catch (BadLocationException e) {
+      return;
+    }
 
     // If no selection, convert all the lines
     if (selStart == selStop) {
@@ -89,8 +100,11 @@ public class DiscourseFormat {
       stopLine = textarea.getLineCount() - 1;
     } else {
       // Make sure the selection doesn't end at the beginning of the last line
-      if (textarea.getLineStartOffset(stopLine) == selStop) {
-        stopLine--;
+      try {
+        if (textarea.getLineStartOffset(stopLine) == selStop) {
+          stopLine--;
+        }
+      } catch (BadLocationException e) {
       }
     }
 
@@ -99,7 +113,7 @@ public class DiscourseFormat {
       appendFormattedLine(cf, i);
     }
 
-    cf.append(html ? "\n</pre>" : "\n[/quote]");
+    cf.append(html ? "\n</pre>" : "\n[/code]");
 
     StringSelection formatted = new StringSelection(cf.toString());
     Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -108,18 +122,18 @@ public class DiscourseFormat {
           // i don't care about ownership
         }
       });
+    Clipboard unixclipboard = Toolkit.getDefaultToolkit().getSystemSelection();
+    if (unixclipboard != null) unixclipboard.setContents(formatted, null);
 
-    editor.statusNotice("Code formatted for " +
-                        (html ? "HTML" : "the Arduino forum ") +
-                        " has been copied to the clipboard.");
+    editor.statusNotice("Code formatted for " + (html ? "HTML" : "the Arduino forum") + " has been copied to the clipboard.");
   }
 
   /**
-    * Append a char to a stringbuffer while escaping for proper display in HTML.
+    * Append a char to a StringBuilder while escaping for proper display in HTML.
     * @param c input char to escape
-    * @param buffer StringBuffer to append html-safe version of c to.
+    * @param buffer StringBuilder to append html-safe version of c to.
     */
-  private void appendToHTML(char c, StringBuffer buffer) {
+  private void appendToHTML(char c, StringBuilder buffer) {
     if (!html) {
       buffer.append(c);
     } else if (c == '<') {
@@ -136,26 +150,18 @@ public class DiscourseFormat {
   }
 
   // A terrible headache...
-  public void appendFormattedLine(StringBuffer cf, int line) {
+  public void appendFormattedLine(StringBuilder cf, int line) {
     Segment segment = new Segment();
 
-    TextAreaPainter painter = textarea.getPainter();
-    TokenMarker tokenMarker = textarea.getTokenMarker();
-
-    // Use painter's cached info for speed
-//    FontMetrics fm = painter.getFontMetrics();
-
     // get line text from parent text area
-    textarea.getLineText(line, segment);
-
+    textarea.getTextLine(line, segment);
+    
     char[] segmentArray = segment.array;
-    int limit = segment.getEndIndex();
     int segmentOffset = segment.offset;
     int segmentCount = segment.count;
 //    int width = 0;
 
-    // If syntax coloring is disabled, do simple translation
-    if (tokenMarker == null) {
+    if (!html) {
       for (int j = 0; j < segmentCount; j++) {
         char c = segmentArray[j + segmentOffset];
         appendToHTML(c, cf);
@@ -169,80 +175,19 @@ public class DiscourseFormat {
       }
 
     } else {
-      // If syntax coloring is enabled, we have to do this
-      // because tokens can vary in width
-      Token tokens;
-      if ((painter.getCurrentLineIndex() == line) &&
-          (painter.getCurrentLineTokens() != null)) {
-        tokens = painter.getCurrentLineTokens();
-
-      } else {
-        painter.setCurrentLineIndex(line);
-        painter.setCurrentLineTokens(tokenMarker.markTokens(segment, line));
-        tokens = painter.getCurrentLineTokens();
+      
+      Token tokenList = textarea.getTokenListForLine(line);
+      
+      while(tokenList != null){
+        if(tokenList.getType() == Token.NULL){
+          cf.append('\n');
+        }else if(tokenList.isPaintable()){
+          tokenList.appendHTMLRepresentation(cf, textarea, false);
+        }
+        
+        tokenList = tokenList.getNextToken();
       }
-
-      int offset = 0;
-//      Font defaultFont = painter.getFont();
-      SyntaxStyle[] styles = painter.getStyles();
-
-      for (;;) {
-        byte id = tokens.id;
-        if (id == Token.END) {
-          char c = segmentArray[segmentOffset + offset];
-          if (segmentOffset + offset < limit) {
-            appendToHTML(c, cf);
-          } else {
-            cf.append('\n');
-          }
-          return; // cf.toString();
-        }
-        if (id == Token.NULL) {
-//          fm = painter.getFontMetrics();
-        } else {
-          // Place open tags []
-          cf.append(html ? "<span style=\"color: #" : "[color=#");
-          cf.append(PApplet.hex(styles[id].getColor().getRGB() & 0xFFFFFF, 6));
-          cf.append(html ? ";\">" : "]");
-
-          if (styles[id].isBold())
-            cf.append(html ? "<b>" : "[b]");
-
-//          fm = styles[id].getFontMetrics(defaultFont);
-        }
-        int length = tokens.length;
-
-        for (int j = 0; j < length; j++) {
-          char c = segmentArray[segmentOffset + offset + j];
-          if (offset == 0 && c == ' ') {
-            // Works on Safari but not Camino 1.6.3 or Firefox 2.x on OS X.
-            cf.append(html ? "&nbsp;" : '\u00A0');  // &nbsp;
-//            if ((j % 2) == 1) {
-//              cf.append("[b]\u00A0[/b]");
-//            } else {
-//              cf.append(' ');
-//            }
-          } else {
-            appendToHTML(c, cf);
-          }
-          // Place close tags [/]
-          if (j == (length - 1) && id != Token.NULL && styles[id].isBold())
-            cf.append(html ? "</b>" : "[/b]");
-          if (j == (length - 1) && id != Token.NULL)
-            cf.append(html ? "</span>" : "[/color]");
-//          int charWidth;
-//          if (c == '\t') {
-//            charWidth = (int) painter
-//              .nextTabStop(width, offset + j)
-//              - width;
-//          } else {
-//            charWidth = fm.charWidth(c);
-//          }
-//          width += charWidth;
-        }
-        offset += length;
-        tokens = tokens.next;
-      }
+  
     }
   }
 }

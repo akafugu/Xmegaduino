@@ -22,46 +22,50 @@
 
 package processing.app;
 
-import processing.app.syntax.*;
-
 import java.awt.*;
-import javax.swing.*;
+import java.awt.geom.Rectangle2D;
+import java.util.Map;
+
+import javax.swing.JComponent;
+
+import processing.app.helpers.OSUtils;
+import processing.app.helpers.PreferencesMap;
+import processing.app.syntax.SketchTextArea;
 
 
 /**
  * Li'l status bar fella that shows the line number.
  */
 public class EditorLineStatus extends JComponent {
-  JEditTextArea textarea;
   int start = -1, stop;
 
   Image resize;
 
   Color foreground;
   Color background;
+  Color messageForeground;
+  
   Font font;
   int high;
 
   String text = "";
+  String name = "";
+  String serialport = "";
 
 
-  public EditorLineStatus(JEditTextArea textarea) {
-    this.textarea = textarea;
-    textarea.editorLineStatus = this;
-
+  public EditorLineStatus() {
     background = Theme.getColor("linestatus.bgcolor");
     font = Theme.getFont("linestatus.font");
     foreground = Theme.getColor("linestatus.color");
     high = Theme.getInteger("linestatus.height");
 
-    if (Base.isMacOS()) {
+    if (OSUtils.isMacOS()) {
       resize = Base.getThemeImage("resize.gif", this);
     }
     //linestatus.bgcolor = #000000
     //linestatus.font    = SansSerif,plain,10
     //linestatus.color   = #FFFFFF
   }
-
 
   public void set(int newStart, int newStop) {
     if ((newStart == start) && (newStop == stop)) return;
@@ -85,8 +89,15 @@ public class EditorLineStatus extends JComponent {
     repaint();
   }
 
-
   public void paintComponent(Graphics g) {
+    if (name == "" && serialport == "") {
+      PreferencesMap boardPreferences = BaseNoGui.getBoardPreferences();
+      if (boardPreferences != null)
+        setBoardName(boardPreferences.get("name"));
+      else
+        setBoardName("-");
+      setSerialPort(PreferencesData.get("serial.port"));
+    }
     g.setColor(background);
     Dimension size = getSize();
     g.fillRect(0, 0, size.width, size.height);
@@ -96,11 +107,25 @@ public class EditorLineStatus extends JComponent {
     int baseline = (high + g.getFontMetrics().getAscent()) / 2;
     g.drawString(text, 6, baseline);
 
-    if (Base.isMacOS()) {
+    g.setColor(messageForeground);
+    String tmp = name + " on " + serialport;
+    
+    Rectangle2D bounds = g.getFontMetrics().getStringBounds(tmp, null);
+    
+    g.drawString(tmp, size.width - (int) bounds.getWidth() -20 , baseline);
+
+    if (OSUtils.isMacOS()) {
       g.drawImage(resize, size.width - 20, 0, this);
     }
   }
 
+  public void setBoardName(String name) {
+    this.name = name;
+  }
+
+  public void setSerialPort(String serialport) {
+    this.serialport = serialport;
+  }
 
   public Dimension getPreferredSize() {
     return new Dimension(300, high);

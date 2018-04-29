@@ -29,7 +29,9 @@ import java.io.IOException;
 
 import javax.swing.JOptionPane;
 
+import org.apache.commons.compress.utils.IOUtils;
 import processing.app.*;
+import static processing.app.I18n._;
 
 
 public class FixEncoding implements Tool {
@@ -37,7 +39,7 @@ public class FixEncoding implements Tool {
 
 
   public String getMenuTitle() {
-    return "Fix Encoding & Reload";
+    return _("Fix Encoding & Reload");
   }
   
   
@@ -53,8 +55,8 @@ public class FixEncoding implements Tool {
     if (sketch.isModified()) {
       int result = 
         JOptionPane.showConfirmDialog(editor, 
-                                      "Discard all changes and reload sketch?", 
-                                      "Fix Encoding & Reload",
+                                      _("Discard all changes and reload sketch?"), 
+                                      _("Fix Encoding & Reload"),
                                       JOptionPane.YES_NO_OPTION,
                                       JOptionPane.QUESTION_MESSAGE);
 
@@ -73,27 +75,28 @@ public class FixEncoding implements Tool {
       
     } catch (IOException e) {
       String msg = 
-        "An error occurred while trying to fix the file encoding.\n" +
-        "Do not attempt to save this sketch as it may overwrite\n" +
-        "the old version. Use Open to re-open the sketch and try again.\n" +
+        _("An error occurred while trying to fix the file encoding.\nDo not attempt to save this sketch as it may overwrite\nthe old version. Use Open to re-open the sketch and try again.\n") +
         e.getMessage();
-      Base.showWarning("Fix Encoding & Reload", msg, e); 
+      Base.showWarning(_("Fix Encoding & Reload"), msg, e); 
     }
   }
 
 
   protected String loadWithLocalEncoding(File file) throws IOException {
     // FileReader uses the default encoding, which is what we want.
-    FileReader fr = new FileReader(file);
-    BufferedReader reader = new BufferedReader(fr);
+    BufferedReader reader = null;
+    try {
+      reader = new BufferedReader(new FileReader(file));
 
-    StringBuffer buffer = new StringBuffer();
-    String line = null;
-    while ((line = reader.readLine()) != null) {
-      buffer.append(line);
-      buffer.append('\n');
+      StringBuffer buffer = new StringBuffer();
+      String line;
+      while ((line = reader.readLine()) != null) {
+        buffer.append(line);
+        buffer.append('\n');
+      }
+      return buffer.toString();
+    } finally {
+      IOUtils.closeQuietly(reader);
     }
-    reader.close();
-    return buffer.toString();
   }
 }
